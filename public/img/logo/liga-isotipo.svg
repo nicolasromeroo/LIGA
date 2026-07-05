@@ -1,0 +1,38 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- LIGA · isotipo principal -->
+  <rect x="6" y="6" width="228" height="228" rx="48" fill="#0B0B0B" stroke="#D6FF00" stroke-width="8"/>
+
+  <g fill="#D6FF00">
+    <!-- camiseta flameando sobre la cabeza -->
+    <path d="M50,74 C58,46 86,60 108,52 C130,44 148,58 168,48 C178,44 188,52 190,66 L186,86 C176,74 158,86 138,78 C118,70 98,84 78,76 C68,72 60,78 58,88 Z"/>
+    <!-- puños -->
+    <circle cx="56" cy="86" r="12"/>
+    <circle cx="184" cy="84" r="12"/>
+    <!-- brazos en V -->
+    <path d="M94,146 L58,90" stroke="#D6FF00" stroke-width="19" stroke-linecap="round"/>
+    <path d="M146,146 L182,88" stroke="#D6FF00" stroke-width="19" stroke-linecap="round"/>
+    <!-- cabeza -->
+    <circle cx="120" cy="118" r="17"/>
+    <!-- torso -->
+    <path d="M84,156 Q120,138 156,156 L150,178 Q120,166 90,178 Z"/>
+  </g>
+
+  <!-- sigla LIGA (letras geométricas dibujadas a mano) -->
+  <g transform="translate(60,186)" fill="#D6FF00">
+    <!-- L -->
+    <path d="M0,0 h9 v25 h18 v9 H0 Z"/>
+    <!-- I -->
+    <rect x="37" y="0" width="9" height="34"/>
+    <!-- G -->
+    <rect x="56" y="0" width="9" height="34"/>
+    <rect x="56" y="0" width="27" height="9"/>
+    <rect x="56" y="25" width="27" height="9"/>
+    <rect x="74" y="16" width="9" height="18"/>
+    <rect x="69" y="16" width="14" height="9"/>
+    <!-- A -->
+    <rect x="93" y="0" width="9" height="34"/>
+    <rect x="111" y="0" width="9" height="34"/>
+    <rect x="93" y="0" width="27" height="9"/>
+    <rect x="93" y="16" width="27" height="9"/>
+  </g>
+</svg>

@@ -1,0 +1,85 @@
+/* ============================================================
+   SOBRES — animaciones y superficies (Pitch Brutalism)
+   ============================================================ */
+
+/* Foil metalizado en movimiento (legacy) */
+@keyframes foilMove {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+}
+.animate-foilMove {
+    background-size: 300% 300%;
+    animation: foilMove 6s linear infinite;
+}
+
+/* --- Foil holográfico premium: barrido diagonal continuo --- */
+@keyframes holoSweep {
+    0%   { background-position: -60% 0; }
+    100% { background-position: 160% 0; }
+}
+.holo-foil::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    mix-blend-mode: screen;
+    opacity: 0.5;
+    background: linear-gradient(
+        110deg,
+        transparent 34%,
+        var(--foil, rgba(255, 255, 255, 0.22)) 46%,
+        transparent 52%,
+        var(--foil-2, rgba(255, 255, 255, 0.12)) 64%,
+        transparent 72%
+    );
+    background-size: 250% 100%;
+    animation: holoSweep 4.5s ease-in-out infinite;
+}
+
+/* --- Emblema del tier: respiración + glow --- */
+@keyframes emblemBreathe {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-5px) scale(1.035); }
+}
+.emblem-breathe { animation: emblemBreathe 4.6s ease-in-out infinite; }
+
+@keyframes emblemGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px var(--eglow, transparent)); }
+    50%      { filter: drop-shadow(0 0 22px var(--eglow, transparent)); }
+}
+.emblem-glow { animation: emblemGlow 3.4s ease-in-out infinite; }
+
+/* --- Anillos de apertura --- */
+@keyframes ringExpand {
+    0%   { transform: scale(0.55); opacity: 0.85; }
+    100% { transform: scale(2.4); opacity: 0; }
+}
+.ring-pulse { animation: ringExpand 1.7s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+.ring-pulse-2 { animation: ringExpand 1.7s cubic-bezier(0.16, 1, 0.3, 1) infinite; animation-delay: 0.55s; }
+
+/* --- Barra de carga indeterminada --- */
+@keyframes loadSlide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+}
+.load-slide { animation: loadSlide 1.15s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+
+/* --- Pulso de rareza en cartas reveladas --- */
+@keyframes rarityPulse {
+    0%, 100% { box-shadow: inset 0 0 0 1px var(--rc, transparent), 0 0 26px -12px var(--rc, transparent); }
+    50%      { box-shadow: inset 0 0 0 1px var(--rc, transparent), 0 0 44px -6px var(--rc, transparent); }
+}
+.rarity-pulse { animation: rarityPulse 3s ease-in-out infinite; }
+
+/* --- Rotación lenta del aura del emblema --- */
+@keyframes auraSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+.aura-spin { animation: auraSpin 18s linear infinite; }
+
+/* 3D */
+.perspective-1400 { perspective: 1400px; }
+.preserve-3d { transform-style: preserve-3d; }
+.backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
