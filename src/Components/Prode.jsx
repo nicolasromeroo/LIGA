@@ -1,8 +1,10 @@
 import { useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-hot-toast";
 import { prodeApi } from "../api";
 import { AuthContext } from "../Contexts/AuthContext.jsx";
+import ConfirmModal from "./ConfirmModal.jsx";
 
 /* ---------------- helpers ---------------- */
 
@@ -62,7 +64,7 @@ const MatchPredictor = ({ match, existing, onSave }) => {
       setSaved(true);
       setTimeout(() => setSaved(false), 1400);
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo guardar el pronóstico");
+      toast.error(err.response?.data?.message || "No se pudo guardar el pronóstico");
     } finally {
       setSaving(false);
     }
@@ -218,7 +220,7 @@ const Prode = () => {
     try {
       setDetail(await prodeApi.torneo(id));
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo abrir el torneo");
+      toast.error(err.response?.data?.message || "No se pudo abrir el torneo");
       setSelectedId(null);
     } finally {
       setDetailLoading(false);
@@ -238,7 +240,7 @@ const Prode = () => {
       await loadTorneos();
       setSelectedId(t.id);
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo crear el torneo");
+      toast.error(err.response?.data?.message || "No se pudo crear el torneo");
     } finally {
       setBusy(false);
     }
@@ -253,7 +255,7 @@ const Prode = () => {
       await loadTorneos();
       setSelectedId(t.id);
     } catch (err) {
-      alert(err.response?.data?.message || "Código inválido");
+      toast.error(err.response?.data?.message || "Código inválido");
     } finally {
       setBusy(false);
     }
@@ -265,7 +267,7 @@ const Prode = () => {
       await loadTorneos();
       setSelectedId(id);
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo unir");
+      toast.error(err.response?.data?.message || "No se pudo unir");
     }
   };
 
@@ -280,11 +282,12 @@ const Prode = () => {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const [confirmLeave, setConfirmLeave] = useState(false);
+
   const leaveOrDelete = async () => {
     const t = detail?.torneo;
     if (!t) return;
-    const msg = t.isOwner ? "¿Eliminar este torneo para todos?" : "¿Abandonar el torneo?";
-    if (!confirm(msg)) return;
+    setConfirmLeave(false);
     try {
       if (t.isOwner) await prodeApi.deleteTorneo(t.id);
       else await prodeApi.leaveTorneo(t.id);
@@ -292,7 +295,7 @@ const Prode = () => {
       setDetail(null);
       await loadTorneos();
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo completar la acción");
+      toast.error(err.response?.data?.message || "No se pudo completar la acción");
     }
   };
 
@@ -479,7 +482,7 @@ const Prode = () => {
                             {copied && <p className="eyebrow text-[9px] text-volt mt-1">Copiado</p>}
                           </div>
                           {detail.isMember && (
-                            <button onClick={leaveOrDelete} className="eyebrow text-[10px] text-[#6b6b64] hover:text-live transition-colors">
+                            <button onClick={() => setConfirmLeave(true)} className="eyebrow text-[10px] text-[#6b6b64] hover:text-live transition-colors">
                               {detail.torneo.isOwner ? "Eliminar torneo" : "Abandonar torneo"}
                             </button>
                           )}
@@ -678,6 +681,20 @@ const Prode = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={confirmLeave}
+        title={detail?.torneo?.isOwner ? "¿Eliminar torneo?" : "¿Abandonar torneo?"}
+        message={
+          detail?.torneo?.isOwner
+            ? "Se elimina para todos los participantes. Esta acción no se puede deshacer."
+            : "Vas a dejar de ver este torneo y tus pronósticos en él."
+        }
+        confirmLabel={detail?.torneo?.isOwner ? "Eliminar" : "Abandonar"}
+        danger
+        onConfirm={leaveOrDelete}
+        onCancel={() => setConfirmLeave(false)}
+      />
     </div>
   );
 };

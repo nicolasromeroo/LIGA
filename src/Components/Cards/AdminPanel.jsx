@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { playersApi, newsApi } from "../../api";
 import { toImageUrl, PLAYER_PLACEHOLDER } from "../../api/normalize";
+import ConfirmModal from "../ConfirmModal.jsx";
 
 const EMPTY = {
   name: "",
@@ -263,8 +264,10 @@ const AdminPanel = () => {
     }
   };
 
+  const [pendingPlayerDelete, setPendingPlayerDelete] = useState(null);
+
   const removePlayer = async (id) => {
-    if (!confirm("¿Eliminar este jugador del sistema?")) return;
+    setPendingPlayerDelete(null);
     try {
       await playersApi.remove(id);
       setCatalog((c) => c.filter((p) => p.id !== id));
@@ -315,8 +318,10 @@ const AdminPanel = () => {
     setNewsForm({ ...EMPTY_NEWS, ...item });
   };
 
+  const [pendingNewsDelete, setPendingNewsDelete] = useState(null);
+
   const removeNews = async (id) => {
-    if (!confirm("¿Eliminar esta noticia?")) return;
+    setPendingNewsDelete(null);
     try {
       await newsApi.remove(id);
       setNewsList((items) => items.filter((item) => item.id !== id));
@@ -332,7 +337,6 @@ const AdminPanel = () => {
   return (
     <div className="relative min-h-screen bg-ink text-[#ededea] pt-28 pb-20 px-5 sm:px-8 overflow-hidden grain">
       <div className="absolute inset-0 bg-pitch-grid opacity-30" />
-      <Toaster position="top-right" />
 
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Header */}
@@ -744,7 +748,7 @@ const AdminPanel = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => removeNews(item.id)}
+                          onClick={() => setPendingNewsDelete(item.id)}
                           className="text-sm text-coral hover:underline"
                         >
                           Borrar
@@ -800,7 +804,7 @@ const AdminPanel = () => {
                     className="group relative panel clip-card overflow-hidden"
                   >
                     <button
-                      onClick={() => removePlayer(p.id)}
+                      onClick={() => setPendingPlayerDelete(p.id)}
                       className="absolute z-30 top-2 right-2 w-7 h-7 grid place-items-center rounded-full bg-coral/90 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Eliminar"
                     >
@@ -836,6 +840,25 @@ const AdminPanel = () => {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingPlayerDelete != null}
+        title="¿Eliminar jugador?"
+        message="Se borra del catálogo y de las cartas que ya se repartieron. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={() => removePlayer(pendingPlayerDelete)}
+        onCancel={() => setPendingPlayerDelete(null)}
+      />
+      <ConfirmModal
+        open={pendingNewsDelete != null}
+        title="¿Eliminar noticia?"
+        message="Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={() => removeNews(pendingNewsDelete)}
+        onCancel={() => setPendingNewsDelete(null)}
+      />
     </div>
   );
 };
