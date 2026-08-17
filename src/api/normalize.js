@@ -90,6 +90,45 @@ export const normalizeCard = (c = {}) => {
     };
 };
 
+// Liga a la que pertenece el fixture (solo se configuró Liga Profesional
+// Argentina del lado del back, pero el helper queda genérico por si se suma
+// otra liga más adelante).
+const flagForLeague = (league = "") =>
+    /argentin/i.test(league) ? "🇦🇷" : "⚽";
+
+const FIXTURE_STATUS = {
+    live: "live",
+    ft: "ft",
+    scheduled: "scheduled",
+    cancelled: "cancelled",
+    other: "scheduled",
+};
+
+// Partido real (modelo NormalizedFixture del back /sportapi) → forma que
+// esperan LiveScores/LiveTicker/Dashboard. No inventa eventos ni minuto:
+// lo que la API no da, se deja vacío/null en vez de simularlo.
+export const normalizeFixture = (f = {}) => ({
+    id: f.id,
+    league: f.league,
+    country: flagForLeague(f.league),
+    home: f.home,
+    away: f.away,
+    homeLogo: f.homeLogo,
+    awayLogo: f.awayLogo,
+    homeScore: f.homeScore,
+    awayScore: f.awayScore,
+    minute: f.minute,
+    startTime: f.startTime,
+    status: FIXTURE_STATUS[f.status] || "scheduled",
+    time: f.startTime
+        ? new Date(f.startTime).toLocaleTimeString("es-AR", {
+              hour: "2-digit",
+              minute: "2-digit",
+          })
+        : null,
+    events: [],
+});
+
 // Usuario autenticado: agrega alias usados por la UI (pts, role en minúsculas).
 export const normalizeUser = (u = {}) => ({
     ...u,

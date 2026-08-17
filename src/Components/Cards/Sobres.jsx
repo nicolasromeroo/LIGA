@@ -6,10 +6,12 @@ import { packsApi } from "../../api";
 import { PLAYER_PLACEHOLDER } from "../../api/normalize";
 import { AuthContext } from "../../Contexts/AuthContext.jsx";
 
+// onloaderror en no-op: si el asset falla (bloqueado, red, etc.) el sobre
+// se sigue pudiendo abrir en silencio en vez de tirar un error en consola.
 const sounds = {
-    whoosh: new Howl({ src: ['/sounds/whoosh.mp3'] }),
-    open: new Howl({ src: ['/sounds/open.mp3'] }),
-    reveal: new Howl({ src: ['/sounds/reveal.mp3'] }),
+    whoosh: new Howl({ src: ['/sounds/whoosh.wav'], onloaderror: () => {} }),
+    open: new Howl({ src: ['/sounds/open.wav'], onloaderror: () => {} }),
+    reveal: new Howl({ src: ['/sounds/reveal.wav'], onloaderror: () => {} }),
 };
 
 // Probabilidades estimadas de drop por sobre (common / rare / epic / legend).

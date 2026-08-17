@@ -1,52 +1,16 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useContext, useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import LiveTicker from "../Components/LiveTicker.jsx";
+import { AuthContext } from "../Contexts/AuthContext.jsx";
+import { newsApi, playersApi, sportdbApi } from "../api";
 
-/* ===================== Datos ===================== */
-const FEATURED = [
-  {
-    name: "Erling Haaland",
-    rating: 91,
-    position: "DEL",
-    team: "Man. City",
-    nat: "Noruega",
-    img: "/img/haaland.jpg",
-    stats: { RIT: 89, TIR: 94, PAS: 78, REG: 80, DEF: 45, FÍS: 88 },
-  },
-  {
-    name: "Luka Modrić",
-    rating: 89,
-    position: "MED",
-    team: "Real Madrid",
-    nat: "Croacia",
-    img: "/img/modric.jpg",
-    stats: { RIT: 75, TIR: 83, PAS: 91, REG: 88, DEF: 72, FÍS: 76 },
-  },
-  {
-    name: "Moisés Caicedo",
-    rating: 88,
-    position: "MED",
-    team: "Chelsea",
-    nat: "Ecuador",
-    img: "/img/caicedo-chelsea.jpg",
-    stats: { RIT: 82, TIR: 75, PAS: 84, REG: 80, DEF: 82, FÍS: 85 },
-  },
-  {
-    name: "Vitinha",
-    rating: 86,
-    position: "MED",
-    team: "PSG",
-    nat: "Portugal",
-    img: "/img/vitinha.jpg",
-    stats: { RIT: 78, TIR: 82, PAS: 86, REG: 88, DEF: 68, FÍS: 72 },
-  },
-];
-
+/* ===================== Datos estáticos (secciones fijas de la landing) ===================== */
 const PILLARS = [
   {
     n: "01",
@@ -124,6 +88,53 @@ const accentMap = {
 
 /* ===================== Dashboard ===================== */
 const Dashboard = () => {
+  const { user } = useContext(AuthContext);
+  const [featured, setFeatured] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [latestNews, setLatestNews] = useState([]);
+
+  // Trae datos reales para las secciones que antes eran mock (jugadores
+  // destacados, próximos partidos, últimas noticias). Cada fetch es
+  // independiente: si una falla, las demás secciones igual muestran datos.
+  useEffect(() => {
+    let alive = true;
+
+    playersApi
+      .all()
+      .then((players) => {
+        if (!alive) return;
+        setFeatured(
+          [...players].sort((a, b) => (b.power ?? 0) - (a.power ?? 0)).slice(0, 8),
+        );
+      })
+      .catch((err) => console.error("No se pudieron cargar los jugadores destacados:", err.message));
+
+    sportdbApi
+      .matches()
+      .then((matches) => {
+        if (!alive) return;
+        setUpcoming(
+          matches
+            .filter((m) => m.status === "scheduled")
+            .sort((a, b) => (a.startTime ?? 0) - (b.startTime ?? 0))
+            .slice(0, 3),
+        );
+      })
+      .catch((err) => console.error("No se pudieron cargar los próximos partidos:", err.message));
+
+    newsApi
+      .all()
+      .then((items) => {
+        if (!alive) return;
+        setLatestNews(items.slice(0, 3));
+      })
+      .catch((err) => console.error("No se pudieron cargar las noticias:", err.message));
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <div className="bg-ink text-[#ededea] overflow-x-hidden">
       <div className="pt-16">
@@ -398,101 +409,110 @@ const Dashboard = () => {
       </section>
 
       {/* ============== JUGADORES DESTACADOS ============== */}
-      <section className="relative py-20 border-y border-line bg-ink-2">
-        <div className="absolute inset-0 bg-stripes opacity-30" />
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
-            <div>
-              <p className="eyebrow text-volt mb-3">El plantel</p>
-              <h2 className="display-giant text-5xl md:text-7xl text-white">
-                Jugadores
-                <br />
-                <span className="text-volt italic-skew">destacados</span>
-              </h2>
+      {featured.length > 0 && (
+        <section className="relative py-20 border-y border-line bg-ink-2">
+          <div className="absolute inset-0 bg-stripes opacity-30" />
+          <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+            <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
+              <div>
+                <p className="eyebrow text-volt mb-3">El plantel</p>
+                <h2 className="display-giant text-5xl md:text-7xl text-white">
+                  Jugadores
+                  <br />
+                  <span className="text-volt italic-skew">destacados</span>
+                </h2>
+              </div>
+              <Link
+                to="/players"
+                className="hairline clip-btn px-6 py-3 text-sm font-display font-600 uppercase tracking-widest text-white hover:border-volt/60 hover:text-volt transition-colors"
+              >
+                Ver todos
+              </Link>
             </div>
-            <Link
-              to="/players"
-              className="hairline clip-btn px-6 py-3 text-sm font-display font-600 uppercase tracking-widest text-white hover:border-volt/60 hover:text-volt transition-colors"
-            >
-              Ver todos
-            </Link>
-          </div>
 
-          <Swiper
-            modules={[Pagination, Navigation, Autoplay]}
-            spaceBetween={20}
-            slidesPerView={1.15}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-              1280: { slidesPerView: 4 },
-            }}
-            loop
-            grabCursor
-            autoplay={{
-              delay: 4000,
-              disableOnInteraction: false,
-              pauseOnMouseEnter: true,
-            }}
-            pagination={{ clickable: true, el: ".fp-pag" }}
-            className="!pb-2"
-          >
-            {FEATURED.map((pl) => (
-              <SwiperSlide key={pl.name}>
-                <motion.div
-                  whileHover={{ y: -10 }}
-                  className="group relative panel clip-card overflow-hidden h-[460px]"
-                >
-                  {/* Glow rareza */}
-                  <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-volt/10 to-transparent" />
-                  {/* OVR + pos */}
-                  <div className="absolute z-20 top-5 left-5 leading-none">
-                    <div className="font-mega text-5xl text-volt drop-shadow">
-                      {pl.rating}
+            <Swiper
+              modules={[Pagination, Navigation, Autoplay]}
+              spaceBetween={20}
+              slidesPerView={1.15}
+              breakpoints={{
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+                1280: { slidesPerView: 4 },
+              }}
+              loop={featured.length > 4}
+              grabCursor
+              autoplay={{
+                delay: 4000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+              }}
+              pagination={{ clickable: true, el: ".fp-pag" }}
+              className="!pb-2"
+            >
+              {featured.map((pl) => (
+                <SwiperSlide key={pl.id}>
+                  <motion.div
+                    whileHover={{ y: -10 }}
+                    className="group relative panel clip-card overflow-hidden h-[460px]"
+                  >
+                    {/* Glow rareza */}
+                    <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-volt/10 to-transparent" />
+                    {/* OVR + pos */}
+                    <div className="absolute z-20 top-5 left-5 leading-none">
+                      <div className="font-mega text-5xl text-volt drop-shadow">
+                        {pl.power}
+                      </div>
+                      <div className="eyebrow text-white/80 mt-1">
+                        {pl.position}
+                      </div>
+                      <div className="mt-2 w-8 h-px bg-volt" />
                     </div>
-                    <div className="eyebrow text-white/80 mt-1">
-                      {pl.position}
+                    {/* Imagen */}
+                    <div className="absolute inset-0 overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent z-10" />
+                      <img
+                        src={pl.image}
+                        alt={pl.name}
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                      />
                     </div>
-                    <div className="mt-2 w-8 h-px bg-volt" />
-                  </div>
-                  {/* Imagen */}
-                  <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent z-10" />
-                    <img
-                      src={pl.img}
-                      alt={pl.name}
-                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
-                    />
-                  </div>
-                  {/* Info */}
-                  <div className="absolute z-20 bottom-0 inset-x-0 p-5">
-                    <h3 className="display-giant text-3xl text-white leading-none">
-                      {pl.name}
-                    </h3>
-                    <p className="text-xs text-[#8a8a82] mt-1.5 uppercase tracking-wider">
-                      {pl.team} · {pl.nat}
-                    </p>
-                    <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-2 opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-40 overflow-hidden transition-all duration-500">
-                      {Object.entries(pl.stats).map(([k, v]) => (
-                        <div
-                          key={k}
-                          className="flex items-center justify-between border-b border-line pb-1"
-                        >
-                          <span className="eyebrow text-[#6b6b64]">{k}</span>
-                          <span className="font-stat font-700 text-volt tabular-nums">
-                            {v}
-                          </span>
-                        </div>
-                      ))}
+                    {/* Info */}
+                    <div className="absolute z-20 bottom-0 inset-x-0 p-5">
+                      <h3 className="display-giant text-3xl text-white leading-none">
+                        {pl.name}
+                      </h3>
+                      <p className="text-xs text-[#8a8a82] mt-1.5 uppercase tracking-wider">
+                        {pl.team || pl.club} · {pl.nationality}
+                      </p>
+                      <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-2 opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-40 overflow-hidden transition-all duration-500">
+                        {[
+                          ["RIT", pl.stats.speed],
+                          ["TIR", pl.stats.attack],
+                          ["PAS", pl.stats.pass],
+                          ["REG", pl.stats.dribble],
+                          ["DEF", pl.stats.defense],
+                          ["VIS", pl.stats.vision],
+                        ].map(([k, v]) => (
+                          <div
+                            key={k}
+                            className="flex items-center justify-between border-b border-line pb-1"
+                          >
+                            <span className="eyebrow text-[#6b6b64]">{k}</span>
+                            <span className="font-stat font-700 text-volt tabular-nums">
+                              {v ?? "—"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-          <div className="fp-pag flex justify-center gap-2 mt-8" />
-        </div>
-      </section>
+                  </motion.div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+            <div className="fp-pag flex justify-center gap-2 mt-8" />
+          </div>
+        </section>
+      )}
 
       {/* ============== SOBRES / PUNTOS ============== */}
       <section className="relative max-w-7xl mx-auto px-5 sm:px-8 py-24">
@@ -520,27 +540,40 @@ const Dashboard = () => {
 
           {/* Saldo + paquetes */}
           <div className="grid gap-4">
-            <div className="panel clip-notch p-6 flex items-center justify-between">
-              <div>
-                <p className="eyebrow text-[#6b6b64]">Tus puntos</p>
-                <div className="font-mega text-5xl text-gold leading-none mt-1">
-                  1.250
+            {user ? (
+              <div className="panel clip-notch p-6 flex items-center justify-between">
+                <div>
+                  <p className="eyebrow text-[#6b6b64]">Tus puntos</p>
+                  <div className="font-mega text-5xl text-gold leading-none mt-1">
+                    {(user.pts ?? user.points ?? 0).toLocaleString("es-AR")}
+                  </div>
                 </div>
+                <span className="text-5xl">⚡</span>
               </div>
-              <span className="text-5xl">⚡</span>
-            </div>
+            ) : (
+              <Link
+                to="/register"
+                className="panel clip-notch p-6 flex items-center justify-between hover:border-gold/50 transition-colors"
+              >
+                <div>
+                  <p className="eyebrow text-[#6b6b64]">¿Todavía no jugás?</p>
+                  <div className="font-display text-lg font-700 text-white mt-1">
+                    Creá tu cuenta y sumá puntos
+                  </div>
+                </div>
+                <span className="text-5xl">⚡</span>
+              </Link>
+            )}
             {[
               {
-                t: "Sobre Premium",
-                c: "250",
+                t: "Sobre Oro",
+                c: "100",
                 d: "Mayor chance de cartas épicas",
-                a: "rare",
               },
               {
                 t: "Sobre Élite",
                 c: "500",
                 d: "Posibilidad de legendarias",
-                a: "legend",
               },
             ].map((p) => (
               <Link
@@ -580,50 +613,37 @@ const Dashboard = () => {
                 Ver todas →
               </Link>
             </div>
-            <div className="space-y-px panel clip-card overflow-hidden">
-              {[
-                {
-                  t: "Nuevas cartas legendarias",
-                  d: "Descubrí las cartas legendarias disponibles en la tienda.",
-                  tag: "Novedad",
-                  when: "Hoy",
-                },
-                {
-                  t: "Torneo de Verano 2025",
-                  d: "Inscripciones abiertas con grandes premios en juego.",
-                  tag: "Evento",
-                  when: "Ayer",
-                },
-                {
-                  t: "Actualización de equilibrio",
-                  d: "Ajustes en las estadísticas para una mejor experiencia.",
-                  tag: "Update",
-                  when: "2 días",
-                },
-              ].map((n, i) => (
-                <div
-                  key={i}
-                  className="group flex items-center gap-5 p-5 bg-surface hover:bg-surface-2 transition-colors cursor-pointer"
-                >
-                  <span className="index-num shrink-0">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="eyebrow text-volt">{n.tag}</span>
-                      <span className="text-[#6b6b64] text-xs">· {n.when}</span>
+            {latestNews.length > 0 ? (
+              <div className="space-y-px panel clip-card overflow-hidden">
+                {latestNews.map((n, i) => (
+                  <Link
+                    to="/news"
+                    key={n.id ?? i}
+                    className="group flex items-center gap-5 p-5 bg-surface hover:bg-surface-2 transition-colors"
+                  >
+                    <span className="index-num shrink-0">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="eyebrow text-volt">{n.category || "Novedad"}</span>
+                      </div>
+                      <h3 className="font-display font-600 text-lg text-white group-hover:text-volt transition-colors truncate">
+                        {n.title}
+                      </h3>
+                      <p className="text-sm text-[#8a8a82] truncate">{n.description}</p>
                     </div>
-                    <h3 className="font-display font-600 text-lg text-white group-hover:text-volt transition-colors truncate">
-                      {n.t}
-                    </h3>
-                    <p className="text-sm text-[#8a8a82] truncate">{n.d}</p>
-                  </div>
-                  <span className="text-[#6b6b64] group-hover:text-volt group-hover:translate-x-1 transition-all">
-                    →
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <span className="text-[#6b6b64] group-hover:text-volt group-hover:translate-x-1 transition-all">
+                      →
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="panel clip-card p-8 text-center text-sm text-[#6b6b64]">
+                Todavía no hay noticias publicadas.
+              </div>
+            )}
           </div>
 
           {/* Próximos partidos */}
@@ -639,46 +659,33 @@ const Dashboard = () => {
                 Agenda →
               </Link>
             </div>
-            <div className="space-y-3">
-              {[
-                {
-                  home: "River",
-                  away: "Boca",
-                  comp: "Liga Pro",
-                  time: "18:00",
-                },
-                {
-                  home: "Barcelona",
-                  away: "R. Madrid",
-                  comp: "LaLiga",
-                  time: "16:00",
-                },
-                {
-                  home: "Man City",
-                  away: "Liverpool",
-                  comp: "Premier",
-                  time: "17:30",
-                },
-              ].map((m, i) => (
-                <div
-                  key={i}
-                  className="panel clip-tag p-4 hover:border-volt/40 transition-colors"
-                >
-                  <div className="eyebrow text-[#6b6b64] mb-2">{m.comp}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-display font-600 text-white">
-                      {m.home}
-                    </span>
-                    <span className="font-stat text-volt text-sm px-2">
-                      {m.time}
-                    </span>
-                    <span className="font-display font-600 text-white">
-                      {m.away}
-                    </span>
+            {upcoming.length > 0 ? (
+              <div className="space-y-3">
+                {upcoming.map((m) => (
+                  <div
+                    key={m.id}
+                    className="panel clip-tag p-4 hover:border-volt/40 transition-colors"
+                  >
+                    <div className="eyebrow text-[#6b6b64] mb-2">{m.league}</div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-display font-600 text-white truncate">
+                        {m.home}
+                      </span>
+                      <span className="font-stat text-volt text-sm px-2 shrink-0">
+                        {m.time || "-"}
+                      </span>
+                      <span className="font-display font-600 text-white truncate text-right">
+                        {m.away}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="panel clip-tag p-6 text-center text-sm text-[#6b6b64]">
+                Sin partidos programados por ahora.
+              </div>
+            )}
             <Link
               to="/pvp"
               className="mt-4 block text-center bg-coral text-white font-mega uppercase tracking-wide py-3.5 clip-btn hover:bg-white hover:text-ink transition-colors"

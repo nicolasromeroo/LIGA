@@ -1,5 +1,10 @@
 import api from "./client";
-import { normalizePlayer, normalizeCard, normalizeUser } from "./normalize";
+import {
+  normalizePlayer,
+  normalizeCard,
+  normalizeUser,
+  normalizeFixture,
+} from "./normalize";
 
 // ---------------- Auth ----------------
 export const authApi = {
@@ -111,13 +116,30 @@ export const matchApi = {
   },
 };
 
-// ---------------- SportDB (datos reales de fútbol) ----------------
+// ---------------- SportDB (datos reales de la Liga Argentina vía api-football) ----------------
 export const sportdbApi = {
-  // Partidos reales (en vivo + próximos + resultados), ya normalizados.
-  async matches(competition) {
-    const { data } = await api.get("/sportdb/matches", {
-      params: competition ? { competition } : undefined,
-    });
+  // Fixture completo de la temporada (pasados + hoy + próximos), normalizado.
+  async matches() {
+    const { data } = await api.get("/sportapi/fixtures");
+    return (data || []).map(normalizeFixture);
+  },
+  // Solo los partidos en vivo ahora mismo.
+  async live() {
+    const { data } = await api.get("/sportapi/live");
+    return (data || []).map(normalizeFixture);
+  },
+};
+
+// ---------------- Standings (motor de promedios + campeones) ----------------
+export const standingsApi = {
+  // Tabla actual + promedio real de las últimas temporadas + zona de descenso.
+  async promedios() {
+    const { data } = await api.get("/standings/promedios");
+    return data || [];
+  },
+  // Historial de campeones por temporada.
+  async champions() {
+    const { data } = await api.get("/standings/champions");
     return data || [];
   },
 };

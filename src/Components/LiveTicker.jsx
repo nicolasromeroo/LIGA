@@ -1,28 +1,49 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { sportdbApi } from "../api";
 
 /* Ticker horizontal de partidos en vivo (estilo cintillo deportivo).
-   Reemplazá TICKER por datos reales de tu API/WebSocket. */
-const TICKER = [
-    { l: "🇦🇷", h: "River", a: "Boca", hs: 2, as: 1, m: "67'" },
-    { l: "🇪🇸", h: "R. Madrid", a: "Barcelona", hs: 3, as: 2, m: "88'" },
-    { l: "🏴", h: "Man City", a: "Liverpool", hs: 1, as: 1, m: "ENT" },
-    { l: "🇦🇷", h: "Racing", a: "Independiente", hs: 0, as: 0, m: "23'" },
-    { l: "🇮🇹", h: "Inter", a: "Milan", hs: 2, as: 0, m: "FIN" },
-];
-
+   Datos reales vía /sportapi/live; si no hay partidos en vivo, el ticker
+   simplemente no se muestra (nunca rellena con datos falsos). */
 const Item = ({ g }) => (
     <span className="inline-flex items-center gap-2 px-5 text-sm whitespace-nowrap">
-        <span>{g.l}</span>
-        <span className="text-slate-300">{g.h}</span>
-        <span className="font-stat font-700 text-white tabular-nums">{g.hs}-{g.as}</span>
-        <span className="text-slate-300">{g.a}</span>
-        <span className={`font-stat text-xs ${g.m === "FIN" ? "text-slate-500" : "text-live"}`}>{g.m}</span>
+        <span>{g.country}</span>
+        <span className="text-slate-300">{g.home}</span>
+        <span className="font-stat font-700 text-white tabular-nums">
+            {g.homeScore ?? 0}-{g.awayScore ?? 0}
+        </span>
+        <span className="text-slate-300">{g.away}</span>
+        <span className="font-stat text-xs text-live">
+            {typeof g.minute === "number" ? `${g.minute}'` : "EN VIVO"}
+        </span>
         <span className="text-slate-700">•</span>
     </span>
 );
 
 const LiveTicker = () => {
-    const row = [...TICKER, ...TICKER];
+    const [live, setLive] = useState([]);
+
+    useEffect(() => {
+        let alive = true;
+        const load = async () => {
+            try {
+                const data = await sportdbApi.live();
+                if (alive) setLive(data);
+            } catch (err) {
+                console.error("No se pudo cargar el ticker en vivo:", err.message);
+            }
+        };
+        load();
+        const poll = setInterval(load, 30000);
+        return () => {
+            alive = false;
+            clearInterval(poll);
+        };
+    }, []);
+
+    if (live.length === 0) return null;
+
+    const row = [...live, ...live];
     return (
         <Link to="/live" className="block group relative z-30 bg-[#05070d] border-b border-white/5 overflow-hidden">
             <div className="flex items-center">
@@ -32,7 +53,7 @@ const LiveTicker = () => {
                 </div>
                 <div className="relative flex-1 overflow-hidden">
                     <div className="flex animate-[marquee_28s_linear_infinite] group-hover:[animation-play-state:paused]">
-                        {row.map((g, i) => <Item key={i} g={g} />)}
+                        {row.map((g, i) => <Item key={`${g.id}-${i}`} g={g} />)}
                     </div>
                 </div>
             </div>

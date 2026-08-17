@@ -4,65 +4,35 @@ import { sportdbApi } from "../api";
 
 /* ------------------------------------------------------------------
    LiveScores — Centro de partidos en vivo (estilo Promiedos)
-   Los datos de abajo son MOCK listos para reemplazar por tu API/WebSocket.
-   Ej:  socket.on("match_update", setMatches)
-        axios.get("/api/matches/live").then(r => setMatches(r.data))
+   Datos reales de la Liga Profesional Argentina vía /sportapi (api-football),
+   con polling cada 30s. El minuto que se muestra es el que reporta la API en
+   cada refresh — no se simula localmente entre refrescos.
    ------------------------------------------------------------------ */
-
-const MOCK_MATCHES = [
-    {
-        id: 1, league: "Liga Profesional", country: "🇦🇷",
-        home: "River Plate", away: "Boca Juniors",
-        homeScore: 2, awayScore: 1, minute: 67, status: "live",
-        events: ["⚽ 12' Borja", "⚽ 41' Cavani", "⚽ 58' Colidio"],
-    },
-    {
-        id: 2, league: "Liga Profesional", country: "🇦🇷",
-        home: "Racing Club", away: "Independiente",
-        homeScore: 0, awayScore: 0, minute: 23, status: "live", events: [],
-    },
-    {
-        id: 3, league: "LaLiga", country: "🇪🇸",
-        home: "Real Madrid", away: "Barcelona",
-        homeScore: 3, awayScore: 2, minute: 88, status: "live",
-        events: ["⚽ 9' Vinícius", "⚽ 34' Lewandowski", "⚽ 51' Bellingham"],
-    },
-    {
-        id: 4, league: "Premier League", country: "🏴",
-        home: "Man. City", away: "Liverpool",
-        homeScore: 1, awayScore: 1, minute: "HT", status: "ht", events: [],
-    },
-    {
-        id: 5, league: "LaLiga", country: "🇪🇸",
-        home: "Atlético", away: "Sevilla",
-        homeScore: 2, awayScore: 0, status: "ft", events: [],
-    },
-    {
-        id: 6, league: "Premier League", country: "🏴",
-        home: "Arsenal", away: "Chelsea",
-        homeScore: null, awayScore: null, time: "17:30", status: "scheduled", events: [],
-    },
-    {
-        id: 7, league: "Serie A", country: "🇮🇹",
-        home: "Inter", away: "Milan",
-        homeScore: null, awayScore: null, time: "19:45", status: "scheduled", events: [],
-    },
-];
 
 const StatusBadge = ({ m }) => {
     if (m.status === "live")
         return (
             <span className="flex items-center gap-1.5 text-live font-stat font-700 text-sm">
                 <span className="live-dot" />
-                {m.minute}'
+                {typeof m.minute === "number" ? `${m.minute}'` : "EN VIVO"}
             </span>
         );
-    if (m.status === "ht")
-        return <span className="text-gold font-stat font-700 text-sm">ENT</span>;
     if (m.status === "ft")
         return <span className="text-slate-500 font-stat font-700 text-sm">FIN</span>;
-    return <span className="text-volt font-stat font-700 text-sm">{m.time}</span>;
+    if (m.status === "cancelled")
+        return <span className="text-slate-500 font-stat font-700 text-sm">SUSP.</span>;
+    return <span className="text-volt font-stat font-700 text-sm">{m.time || "-"}</span>;
 };
+
+const MatchCardSkeleton = () => (
+    <div className="glass rounded-xl p-4">
+        <div className="skeleton h-3 w-24 rounded mb-4" />
+        <div className="space-y-3">
+            <div className="skeleton h-4 w-full rounded" />
+            <div className="skeleton h-4 w-full rounded" />
+        </div>
+    </div>
+);
 
 const TeamRow = ({ name, score, winner, dim }) => (
     <div className="flex items-center justify-between gap-3">
@@ -121,36 +91,31 @@ const MatchCard = ({ m, i }) => {
 };
 
 const LiveScores = () => {
-    const [matches, setMatches] = useState(MOCK_MATCHES);
+    const [matches, setMatches] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("Todos");
 
-    // Trae partidos REALES desde la API de fútbol (vía /sportdb/matches).
+    // Trae partidos REALES desde la Liga Argentina (vía /sportapi/fixtures),
+    // con polling cada 30s. El minuto que se ve es el de la última respuesta
+    // de la API: no hay un reloj local simulado entre refrescos.
     useEffect(() => {
+        let alive = true;
         const fetchMatches = async () => {
             try {
                 const data = await sportdbApi.matches();
-                if (data.length) setMatches(data);
+                if (alive) setMatches(data);
             } catch (err) {
                 console.error("No se pudieron cargar los partidos:", err.message);
+            } finally {
+                if (alive) setLoading(false);
             }
         };
         fetchMatches();
         const poll = setInterval(fetchMatches, 30000);
-        return () => clearInterval(poll);
-    }, []);
-
-    // Reloj en vivo: avanza el minuto de los partidos en juego.
-    useEffect(() => {
-        const id = setInterval(() => {
-            setMatches((prev) =>
-                prev.map((m) =>
-                    m.status === "live" && typeof m.minute === "number" && m.minute < 90
-                        ? { ...m, minute: m.minute + 1 }
-                        : m
-                )
-            );
-        }, 5000);
-        return () => clearInterval(id);
+        return () => {
+            alive = false;
+            clearInterval(poll);
+        };
     }, []);
 
     const leagues = ["Todos", "En Vivo", ...new Set(matches.map((m) => m.league))];
@@ -210,16 +175,28 @@ const LiveScores = () => {
 
             {/* Grilla de partidos */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-                <AnimatePresence mode="popLayout">
-                    <motion.div layout className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map((m, i) => (
-                            <MatchCard key={m.id} m={m} i={i} />
+                {loading ? (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                            <MatchCardSkeleton key={i} />
                         ))}
-                    </motion.div>
-                </AnimatePresence>
+                    </div>
+                ) : (
+                    <>
+                        <AnimatePresence mode="popLayout">
+                            <motion.div layout className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {filtered.map((m, i) => (
+                                    <MatchCard key={m.id} m={m} i={i} />
+                                ))}
+                            </motion.div>
+                        </AnimatePresence>
 
-                {filtered.length === 0 && (
-                    <p className="text-center text-slate-500 py-20">No hay partidos para este filtro.</p>
+                        {filtered.length === 0 && (
+                            <p className="text-center text-slate-500 py-20">
+                                No hay partidos para este filtro por ahora.
+                            </p>
+                        )}
+                    </>
                 )}
             </div>
         </div>
