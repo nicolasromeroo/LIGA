@@ -24,12 +24,6 @@ const footerSections = [
   },
 ];
 
-const socialLinks = [
-  { label: "Instagram", href: "https://instagram.com" },
-  { label: "X", href: "https://x.com" },
-  { label: "TikTok", href: "https://tiktok.com" },
-];
-
 const Footer = () => {
   return (
     <motion.footer
@@ -40,7 +34,7 @@ const Footer = () => {
       className="relative z-10 mt-8 border-t border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(212,255,0,0.14),_transparent_35%),linear-gradient(180deg,_#05070d_0%,_#0b1018_100%)] px-4 pb-24 pt-10 text-[#dfe3ea] sm:px-6 lg:px-8 lg:pb-10"
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
+        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-3 rounded-full border border-volt/25 bg-volt/10 px-3 py-1.5 text-sm text-[#d4ff00]">
               <span className="h-2.5 w-2.5 rounded-full bg-volt shadow-[0_0_10px_rgba(212,255,0,0.8)]" />
@@ -75,30 +69,6 @@ const Footer = () => {
                   </Link>
                 )),
               )}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="mb-4 text-sm font-700 uppercase tracking-[0.28em] text-[#7c838d]">
-              Seguinos
-            </h4>
-            <div className="space-y-2">
-              {socialLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-sm text-[#dfe3ea] transition hover:text-volt"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-600 text-white">Contacto</p>
-              <p className="mt-1 text-sm text-[#9aa0a9]">soporte@liga.app</p>
-              <p className="text-sm text-[#9aa0a9]">Buenos Aires · Argentina</p>
             </div>
           </div>
         </div>
