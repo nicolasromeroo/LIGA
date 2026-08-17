@@ -214,8 +214,7 @@ const Pvp = () => {
   const [joinId, setJoinId] = useState("");
   const [status, setStatus] = useState("disconnected");
   // 'disconnected', 'waiting', 'selecting', 'battling', 'finished'
-  const [opponentTeam] = useState([]);
-  const [battleLog] = useState([]);
+  const [opponentTeam, setOpponentTeam] = useState([]);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -224,6 +223,15 @@ const Pvp = () => {
   // true entre que confirmo mi equipo y que termina/cae la partida: evita que
   // un roomUpdated con status "selecting" me devuelva a la pantalla de armado.
   const confirmedRef = useRef(false);
+
+  // De { socketId: [cartas resueltas] } (payload de gameStarted/gameFinished)
+  // se queda con las cartas del rival: la única entrada que no es la propia.
+  const resolveOpponent = useCallback((teams) => {
+    const socket = socketRef.current;
+    if (!socket || !teams) return [];
+    const entry = Object.entries(teams).find(([socketId]) => socketId !== socket.id);
+    return entry ? entry[1] : [];
+  }, []);
 
   // Crea (una vez) el socket autenticado y registra los listeners del juego.
   const ensureSocket = useCallback(() => {
@@ -245,14 +253,16 @@ const Pvp = () => {
     socket.on("selectionPhase", () => {
       if (!confirmedRef.current) setStatus("selecting");
     });
-    socket.on("gameStarted", () => {
+    socket.on("gameStarted", (payload) => {
       setError("");
       setBattlePhase("resolving");
       setStatus("battling");
+      setOpponentTeam(resolveOpponent(payload?.teams));
     });
     socket.on("gameFinished", (payload) => {
       confirmedRef.current = false;
       setResult({ winner: payload.winner, score: payload.score });
+      if (payload?.teams) setOpponentTeam(resolveOpponent(payload.teams));
       setStatus("finished");
       refreshUser?.();
     });
@@ -270,7 +280,7 @@ const Pvp = () => {
     });
 
     return socket;
-  }, [username, user?.id, refreshUser]);
+  }, [username, user?.id, refreshUser, resolveOpponent]);
 
   useEffect(() => {
     return () => {
@@ -860,16 +870,6 @@ const Pvp = () => {
           </div>
         </div>
       </div>
-
-      {battleLog.length > 0 && (
-        <div className="panel clip-card mt-6 max-h-52 space-y-1 overflow-auto p-4">
-          {battleLog.map((log, i) => (
-            <p key={i} className="text-sm text-slate-300">
-              {log}
-            </p>
-          ))}
-        </div>
-      )}
     </div>
   );
 
