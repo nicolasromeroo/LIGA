@@ -9,6 +9,8 @@ const footerSections = [
       { label: "Prode", to: "/prode" },
       { label: "Noticias", to: "/news" },
       { label: "En vivo", to: "/live" },
+      { label: "Tabla de posiciones", to: "/tabla" },
+      { label: "Campeones", to: "/campeones" },
     ],
   },
   {

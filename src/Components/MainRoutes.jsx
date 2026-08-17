@@ -16,6 +16,8 @@ import News from "./News.jsx"
 import LiveScores from "./LiveScores.jsx"
 import Mundial from "./Mundial.jsx"
 import Prode from "./Prode.jsx"
+import Standings from "./Standings.jsx"
+import Champions from "./Champions.jsx"
 import NotFound from "./NotFound.jsx"
 import PageTransition from "./PageTransition.jsx"
 
@@ -45,6 +47,8 @@ const MainRoutes = () => {
                 <Route path="/prode" element={page(<Prode />)} />
                 <Route path="/news" element={page(<News />)} />
                 <Route path="/live" element={page(<LiveScores />)} />
+                <Route path="/tabla" element={page(<Standings />)} />
+                <Route path="/campeones" element={page(<Champions />)} />
                 <Route path="/mundial" element={page(<Mundial />)} />
 
                 <Route path="*" element={page(<NotFound />)} />

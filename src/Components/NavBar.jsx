@@ -83,6 +83,7 @@ const NavBar = () => {
   const links = [
     { to: "/", label: "Inicio", end: true },
     { to: "/live", label: "En Vivo", live: true },
+    { to: "/tabla", label: "Tabla" },
     { to: "/mundial", label: "Mundial", hot: true },
     { to: "/players", label: "Colección" },
     { to: "/news", label: "Noticias" },
